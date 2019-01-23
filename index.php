@@ -6,12 +6,76 @@ yimian__headerEnd();
 ?>
 <?php aplayer__element()?>
 <?php aplayer__setup()?>
-<?php $rand=rand(0,300);aplayer__netease(808097971,$rand,$rand+10);?>
+<script>
+function time()
+{
+$.ajax({
+        type: "GET",
+        url: 'https://cdn.yimian.ac.cn/TPlayer/time.php',
+               data: {},
+        traditional: true,
+        dataType: 'json',
+        success: function (msg) {			
+			time=msg.time;
+        }
+    });	
+}
+	var time;
+	var nameList=new Array();
+	var artistList=new Array();
+	var urlList=new Array();
+	var coverList=new Array();
+	var lrcList=new Array();
+	var themeList=new Array();
+	
+	function netease()
+	{
+	
+	$.ajax({
+        type: "GET",
+        url: 'https://api.bzqll.com/music/netease/songList',
+        data: { "key": 579621905,
+			  	"id": 808097971,
+				"limit": 10},
+        traditional: true,
+        dataType: 'json',
+        success: function (msg) {
+		   for(var i=0;i<Math.min(msg.data.songListCount,999);i++)
+		   {
+		   		ap.list.add([{
+				name: msg.data.songs[i].name,
+				artist: msg.data.songs[i].singer,
+				url: msg.data.songs[i].url,
+				cover: msg.data.songs[i].pic,
+				lrc: msg.data.songs[i].lrc,
+				theme: '#ebd0c2'
+				}]);
+				
+				nameList[i]=msg.data.songs[i].name;
+				artistList[i]=msg.data.songs[i].singer;
+				urlList[i]=msg.data.songs[i].url;
+				coverList[i]=msg.data.songs[i].pic;
+				lrcList[i]=msg.data.songs[i].lrc;
+				themeList[i]='#ebd0c2';
+		   }
+        }
+    });
+		
+	}
+	setTimeout("if(tp_host=='host')netease();",1200);
+	</script>
 <h2 id="code"></h2>
 <input type="text" id="room" />
 <button id="join">Join a Room</button>
 <h3 id="ishost"></h3>
 <button id="host">Set Room Host</button>
+<h3 id="cali"></h3>
+<button id="cali-less">slower</button><button id="cali-more">quicker</button>
+<script>
+var cali=0;
+$("#cali-less").click(function(){cali=cali-200;$("#cali").html(cali);});
+$("#cali-more").click(function(){cali=cali+200;$("#cali").html(cali);});
+</script>
 <script>
 var code='';
 var planSeek;
@@ -41,7 +105,7 @@ function ishost()
 ap.on('play', function () {
 	ishost();
 	var i=$.inArray(ap.audio.currentSrc,urlList);
-	var planTime=Math.round(Number(new Date())/1000)+2;
+	var planTime=time+5000;
 	planSeek=ap.audio.currentTime;
 	if(tp_host=='host')
     $.ajax({
@@ -61,7 +125,39 @@ ap.on('play', function () {
         traditional: true,
         dataType: 'json',
         success: function (msg) {
-			var timeLeft=planTime*1000-Number(new Date());
+			time();
+			var timeLeft=planTime-time;
+			setTimeout("ap.seek(planSeek)",timeLeft);
+			
+        }
+    });
+});
+	
+ap.on('pause', function () {time();
+	ishost();
+	var i=$.inArray(ap.audio.currentSrc,urlList);
+	var planTime=time+5000;
+	planSeek=ap.audio.currentTime;
+	if(tp_host=='host')
+    $.ajax({
+        type: "GET",
+        url: 'https://cn.yimian.xyz/etc/TPlayer/aj_action.php',
+        data: { "code":code,
+			  	"name":nameList[i],
+			   	"artist":artistList[i],
+			   	"url":urlList[i],
+			   	"cover":coverList[i],
+			   	"lrc":lrcList[i],
+			   	"theme":themeList[i],
+			   	"planstatus":"pause",
+			   	"planseek":planSeek,
+			   	"plantime":planTime
+			  },
+        traditional: true,
+        dataType: 'json',
+        success: function (msg) {
+			time();
+			var timeLeft=planTime-time;
 			setTimeout("ap.seek(planSeek)",timeLeft);
 			
         }
@@ -69,7 +165,7 @@ ap.on('play', function () {
 });
 </script>
 <script>
-	function rc(){
+	function rc(){time();
 	$.ajax({
         type: "GET",
         url: 'https://cn.yimian.xyz/etc/TPlayer/aj_new.php',
@@ -85,7 +181,7 @@ ap.on('play', function () {
 rc();
 </script>
 <script>
-	$("#join").click(function(){
+	$("#join").click(function(){time();
 		$.ajax({
         type: "GET",
         url: 'https://cn.yimian.xyz/etc/TPlayer/aj_join.php',
@@ -101,7 +197,7 @@ rc();
 		
 	})
 	
-	$("#host").click(function(){
+	$("#host").click(function(){time();
 		$.ajax({
         type: "GET",
         url: 'https://cn.yimian.xyz/etc/TPlayer/aj_sethost.php',
@@ -114,5 +210,118 @@ rc();
     });	
 		
 	})
+	
 </script>
+<script>
+
+var lastIndex='';
+var fw_lefttime;
+var fw_seek;
+var state='pause';
+var tink;
+function follow()
+{time();
+	if(1)
+		$.ajax({
+        type: "GET",
+        url: 'https://cn.yimian.xyz/etc/TPlayer/aj_follow.php',
+        data: {"code":code,"last":lastIndex},
+        traditional: true,
+        dataType: 'json',
+        success: function (msg) {
+			if(msg.code==1)
+				{time();
+					if(msg.planstatus=='seek')
+					{
+						fw_lefttime=msg.plantime-time;
+						fw_seek=msg.planseek;
+						setTimeout("ap.play();ap.seek(fw_seek);",fw_lefttime);
+					}
+						
+					if(ap.audio.currentSrc!=msg.url)	
+					{
+					ap.list.clear();
+						ap.list.add([{
+    					name: msg.name,
+    					artist: msg.artist,
+    					url: msg.url,
+    					cover: msg.cover,
+    					lrc: msg.lrc,
+    					theme: msg.theme
+						}]);
+					}
+					lastIndex=msg.index;
+
+					if(msg.planstatus=='play')
+						{
+							fw_lefttime=msg.plantime-time;
+							tink=msg.plantime;
+							fw_seek=msg.planseek;
+							ad_seek=fw_seek;ap.play();
+							setTimeout("ap.play();state='play';ap.seek(fw_seek);",fw_lefttime-cali);
+						}time();
+					if(msg.planstatus=='pause')
+						{
+							fw_lefttime=msg.plantime-time;
+							
+							fw_seek=msg.planseek;
+							setTimeout("ap.pause();state='pause';ap.seek(fw_seek);",fw_lefttime);
+						}
+					}
+				
+			
+			setTimeout("follow()",1000);
+        }
+    });	
+}
+var adSeek;
+var adTime;
+var ad_seek;
+function adjust()
+{time();
+	if(state=='play'&&tp_host!='host')
+	{
+		adSeek=Math.round(ap.audio.currentTime)+1;
+		adTime=tink+(adSeek-ad_seek)*1000;alert(tink);
+		
+		setTimeout("ap.seek(adSeek);",adTime-time);
+	}
+	setTimeout("adjust()",2000);
+}
+//adjust();
+function school()
+{time();
+	var i=$.inArray(ap.audio.currentSrc,urlList);
+	var pseek=Math.round(ap.audio.currentTime+4);
+	var ptime=Math.round(time+(pseek-ap.audio.currentTime)*1000);
+	if(tp_host=='host')
+		$.ajax({
+        type: "GET",
+        url: 'https://cn.yimian.xyz/etc/TPlayer/aj_action.php',
+               data: { "code":code,
+			  	"name":nameList[i],
+			   	"artist":artistList[i],
+			   	"url":urlList[i],
+			   	"cover":coverList[i],
+			   	"lrc":lrcList[i],
+			   	"theme":themeList[i],
+			   	"planstatus":"seek",
+			   	"planseek":pseek,
+			   	"plantime":ptime
+			  },
+        traditional: true,
+        dataType: 'json',
+        success: function (msg) {			
+			
+        }
+    });	
+		setTimeout("school()",19000);
+}
+
+if(tp_host!='host')	follow();
+//school();
+
+</script>
+
+
 <?php yimian__footer()?>
