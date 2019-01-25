@@ -7,20 +7,6 @@ yimian__headerEnd();
 <?php aplayer__element()?>
 <?php aplayer__setup()?>
 <script>
-function time()
-{
-$.ajax({
-        type: "GET",
-        url: 'https://cdn.yimian.ac.cn/TPlayer/time.php',
-               data: {},
-        traditional: true,
-        dataType: 'json',
-        success: function (msg) {			
-			time=msg.time;
-        }
-    });	
-}
-	var time;
 	var nameList=new Array();
 	var artistList=new Array();
 	var urlList=new Array();
@@ -105,7 +91,7 @@ function ishost()
 ap.on('play', function () {
 	ishost();
 	var i=$.inArray(ap.audio.currentSrc,urlList);
-	var planTime=time+5000;
+	var planTime=Number(new Date())+5000;
 	planSeek=ap.audio.currentTime;
 	if(tp_host=='host')
     $.ajax({
@@ -125,18 +111,17 @@ ap.on('play', function () {
         traditional: true,
         dataType: 'json',
         success: function (msg) {
-			time();
-			var timeLeft=planTime-time;
+			var timeLeft=planTime-Number(new Date());
 			setTimeout("ap.seek(planSeek)",timeLeft);
 			
         }
     });
 });
 	
-ap.on('pause', function () {time();
+ap.on('pause', function () {
 	ishost();
 	var i=$.inArray(ap.audio.currentSrc,urlList);
-	var planTime=time+5000;
+	var planTime=Number(new Date())+5000;
 	planSeek=ap.audio.currentTime;
 	if(tp_host=='host')
     $.ajax({
@@ -156,8 +141,7 @@ ap.on('pause', function () {time();
         traditional: true,
         dataType: 'json',
         success: function (msg) {
-			time();
-			var timeLeft=planTime-time;
+			var timeLeft=planTime-Number(new Date());
 			setTimeout("ap.seek(planSeek)",timeLeft);
 			
         }
@@ -165,7 +149,7 @@ ap.on('pause', function () {time();
 });
 </script>
 <script>
-	function rc(){time();
+	function rc(){
 	$.ajax({
         type: "GET",
         url: 'https://cn.yimian.xyz/etc/TPlayer/aj_new.php',
@@ -181,7 +165,7 @@ ap.on('pause', function () {time();
 rc();
 </script>
 <script>
-	$("#join").click(function(){time();
+	$("#join").click(function(){
 		$.ajax({
         type: "GET",
         url: 'https://cn.yimian.xyz/etc/TPlayer/aj_join.php',
@@ -197,7 +181,7 @@ rc();
 		
 	})
 	
-	$("#host").click(function(){time();
+	$("#host").click(function(){
 		$.ajax({
         type: "GET",
         url: 'https://cn.yimian.xyz/etc/TPlayer/aj_sethost.php',
@@ -220,7 +204,7 @@ var fw_seek;
 var state='pause';
 var tink;
 function follow()
-{time();
+{
 	if(1)
 		$.ajax({
         type: "GET",
@@ -230,10 +214,10 @@ function follow()
         dataType: 'json',
         success: function (msg) {
 			if(msg.code==1)
-				{time();
+				{
 					if(msg.planstatus=='seek')
 					{
-						fw_lefttime=msg.plantime-time;
+						fw_lefttime=msg.plantime-msg.time;
 						fw_seek=msg.planseek;
 						setTimeout("ap.play();ap.seek(fw_seek);",fw_lefttime);
 					}
@@ -254,15 +238,15 @@ function follow()
 
 					if(msg.planstatus=='play')
 						{
-							fw_lefttime=msg.plantime-time;
+							fw_lefttime=msg.plantime-msg.time;
 							tink=msg.plantime;
 							fw_seek=msg.planseek;
 							ad_seek=fw_seek;ap.play();
 							setTimeout("ap.play();state='play';ap.seek(fw_seek);",fw_lefttime-cali);
-						}time();
+						}
 					if(msg.planstatus=='pause')
 						{
-							fw_lefttime=msg.plantime-time;
+							fw_lefttime=msg.plantime-msg.time;
 							
 							fw_seek=msg.planseek;
 							setTimeout("ap.pause();state='pause';ap.seek(fw_seek);",fw_lefttime);
@@ -278,22 +262,22 @@ var adSeek;
 var adTime;
 var ad_seek;
 function adjust()
-{time();
+{
 	if(state=='play'&&tp_host!='host')
 	{
 		adSeek=Math.round(ap.audio.currentTime)+1;
 		adTime=tink+(adSeek-ad_seek)*1000;alert(tink);
 		
-		setTimeout("ap.seek(adSeek);",adTime-time);
+		setTimeout("ap.seek(adSeek);",adTime-Number(new Date()));
 	}
 	setTimeout("adjust()",2000);
 }
 //adjust();
 function school()
-{time();
+{
 	var i=$.inArray(ap.audio.currentSrc,urlList);
 	var pseek=Math.round(ap.audio.currentTime+4);
-	var ptime=Math.round(time+(pseek-ap.audio.currentTime)*1000);
+	var ptime=Math.round(Number(new Date())+(pseek-ap.audio.currentTime)*1000);
 	if(tp_host=='host')
 		$.ajax({
         type: "GET",
@@ -320,6 +304,8 @@ function school()
 
 if(tp_host!='host')	follow();
 //school();
+
+
 
 </script>
 
